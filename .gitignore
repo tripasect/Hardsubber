@@ -1,0 +1,9 @@
+venv/
+build/
+dist/
+*.pyc
+__pycache__/
+*.egg-info/
+.DS_Store
+*_converted.ass
+*_subtitled.mp4
