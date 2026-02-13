@@ -1,7 +1,8 @@
 # Hardsubber
-
+<img width="128" height="128" alt="icon_128x128@2x" src="https://github.com/user-attachments/assets/57ab3113-1d60-4671-aa7d-d78fac96660f" />
+<img width="960" alt="CleanShot 2026-02-10 at 13 41 59@2x" src="https://github.com/user-attachments/assets/70492b68-6b83-458f-9224-351f06b7f873" />
+<br>
 Burn subtitles into videos with a simple GUI. No dependencies required.
-<img width="1560" height="1416" alt="CleanShot 2026-02-10 at 13 41 59@2x" src="https://github.com/user-attachments/assets/70492b68-6b83-458f-9224-351f06b7f873" />
 
 ## Download
 
