@@ -19,11 +19,17 @@ def get_bundled_path(filename):
     return os.path.join(bundle_dir, filename)
 
 def find_executable(name):
-    """Find executable - first check bundled, then system"""
+    """Find executable - first check bundled, then Frameworks, then system"""
     # Check if bundled with app
     bundled_path = get_bundled_path(name)
     if os.path.isfile(bundled_path) and os.access(bundled_path, os.X_OK):
         return bundled_path
+    
+    # Check Frameworks directory (for development)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    frameworks_path = os.path.join(script_dir, 'Frameworks', name)
+    if os.path.isfile(frameworks_path) and os.access(frameworks_path, os.X_OK):
+        return frameworks_path
     
     # Common installation locations on macOS
     common_paths = [
@@ -42,7 +48,7 @@ def find_executable(name):
 class SubtitleBurnerGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Hardsubber")
+        self.root.title("Hardsubber 1.2.0")
         self.root.geometry("600x500")
         
         self.video_file = ""
@@ -135,9 +141,14 @@ class SubtitleBurnerGUI:
             from tkinter import messagebox
             messagebox.showerror("Missing Dependencies", error_msg)
         else:
-            bundled = "bundled" if "MEIPASS" in self.ffmpeg_path else "system"
-            self.log_to_console(f"Using {bundled} ffmpeg: {self.ffmpeg_path}")
-            self.log_to_console(f"Using {bundled} ffprobe: {self.ffprobe_path}")
+            if "MEIPASS" in self.ffmpeg_path:
+                source = "bundled"
+            elif "Frameworks" in self.ffmpeg_path:
+                source = "Frameworks"
+            else:
+                source = "system"
+            self.log_to_console(f"Using {source} ffmpeg: {self.ffmpeg_path}")
+            self.log_to_console(f"Using {source} ffprobe: {self.ffprobe_path}")
             self.log_to_console("Ready to process videos.")
         
     def select_video(self):
@@ -177,8 +188,12 @@ class SubtitleBurnerGUI:
         else:
             subtitle_to_use = self.subtitle_file
         
-        # Start ffmpeg in a thread
-        threading.Thread(target=self.run_ffmpeg, args=(subtitle_to_use,), daemon=True).start()
+        # Start ffmpeg in a thread (only if subtitle conversion succeeded)
+        if subtitle_to_use:
+            threading.Thread(target=self.run_ffmpeg, args=(subtitle_to_use,), daemon=True).start()
+        else:
+            self.start_button.config(state="normal")
+            self.stop_button.config(state="disabled")
     
     def stop_conversion(self):
         """Stop the encoding process"""
@@ -205,9 +220,25 @@ class SubtitleBurnerGUI:
         # Convert SRT to ASS using inline code
         import re
         
-        # Read SRT
-        with open(self.subtitle_file, 'r', encoding='utf-8') as f:
-            srt_content = f.read()
+        # Read SRT with encoding detection
+        encodings_to_try = ['utf-8', 'utf-16', 'utf-16-le', 'utf-16-be', 'latin-1', 'cp1252']
+        srt_content = None
+        
+        for encoding in encodings_to_try:
+            try:
+                with open(self.subtitle_file, 'r', encoding=encoding) as f:
+                    srt_content = f.read()
+                self.log_to_console(f"Subtitle file encoding detected: {encoding}")
+                break
+            except (UnicodeDecodeError, UnicodeError):
+                continue
+        
+        if srt_content is None:
+            self.log_to_console("ERROR: Could not decode subtitle file with any known encoding")
+            self.status_label.config(text="Error: Invalid subtitle encoding", fg="red")
+            self.start_button.config(state="normal")
+            self.stop_button.config(state="disabled")
+            return None
         
         # Create ASS file with styling
         subtitle_dir = os.path.dirname(self.subtitle_file)

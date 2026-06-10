@@ -1,14 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
+
+# Get all dylib files from Frameworks directory
+frameworks_dir = 'Frameworks'
+binaries = []
+
+# Add ffmpeg and ffprobe executables
+binaries.append((os.path.join(frameworks_dir, 'ffmpeg'), '.'))
+binaries.append((os.path.join(frameworks_dir, 'ffprobe'), '.'))
+
+# Add all dylib files
+for file in os.listdir(frameworks_dir):
+    if file.endswith('.dylib'):
+        binaries.append((os.path.join(frameworks_dir, file), '.'))
 
 block_cipher = None
 
 a = Analysis(
     ['hardsubber.py'],
     pathex=[],
-    binaries=[
-        ('/opt/homebrew/bin/ffmpeg', '.'),
-        ('/opt/homebrew/bin/ffprobe', '.'),
-    ],
+    binaries=binaries,
     datas=[('SFArabicMPV-Bold.ttf', '.')],
     hiddenimports=[],
     hookspath=[],
@@ -59,7 +70,7 @@ app = BUNDLE(
     bundle_identifier='com.hardsubber.app',
     info_plist={
         'NSHighResolutionCapable': 'True',
-        'CFBundleShortVersionString': '1.0.0',
-        'CFBundleVersion': '1.0.0',
+        'CFBundleShortVersionString': '1.2.0',
+        'CFBundleVersion': '1.2.0',
     },
 )
